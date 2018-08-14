@@ -1,0 +1,10 @@
+metamorphosis_dir: '/home/dakota/Data/Transcriptome/MetamorphosisData'
+sample_regex: '_R[0-9]\.fastq\.gz$'
+replicate_regex: '_a_'
+output_dir: '/home/dakota/PythonModules/transPipe/output/alpha'
+logs: '/home/dakota/PythonModules/transPipe/logs'
+ends:
+  R1: 'forward'
+  R2: 'backward'
+params:
+  rcor: '-t 2'
