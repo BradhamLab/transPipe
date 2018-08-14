@@ -1,7 +1,7 @@
 import os
 import re
 
-def get_sample_ids(data_dir, sample_regex, replicate_regex):
+def link_ids_to_input(data_dir, sample_regex, replicate_regex=''):
     """
     Link sample ids to data files.
 
@@ -9,7 +9,15 @@ def get_sample_ids(data_dir, sample_regex, replicate_regex):
         data_dir (string): parent directory containing all sample-specific
             directories/files.
         sample_regex (string): regex pattern to extract sample ids from
-            directory/file names names.
+            directory/file names names. Pattern should match all characters
+            proceding {sample.id}, such that extracting up to the match will
+            result in sample id extraction (e.g. with a file name formatted
+            "/foo/bar/{sample_id}{sample_regex}.input, the pattern
+            {sample_regex} should be provided.)
+        replicate_regex (string, optional): regex pattern to match samples with
+            their associated replicate status. Use this to only return samples
+            from a specific replicate run. Default behavior has no replicate
+            filtering with a default value of ''.
     Returns:
         (dict, string): dictionary linking sample id to data files
         
