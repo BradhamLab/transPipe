@@ -1,0 +1,41 @@
+# system level imports
+import os
+import sys
+
+# add scripts to python path for utilitiy functions
+sys.path.append('../../scripts/python')
+from utils import link_ids_to_input
+
+
+configfile: '../../files/config.yaml'
+
+SAMPLE_DICT = link_ids_to_input(config['metamorphosis_dir'],
+                                config['sample_regex'],
+                                config['replicate_regex'])
+
+DATA_DIR = config['metamorphosis_dir']
+SAMPLES = list(SAMPLE_DICT.keys())[0]
+ENDS = sorted(list(config['ends'].keys()))
+
+rule all:
+    input:
+        os.path.join(config['output_dir'], 'corrected_kmers')
+
+rule correct_kmers:
+    input:
+        r1=expand(os.path.join(DATA_DIR,
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+                  sample=SAMPLES),
+        r2=expand(os.path.join(DATA_DIR,
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[1])),
+                  sample=SAMPLES)
+    log:
+        os.path.join(config['logs'], 'rCorrector')
+    params:
+        config['params']['rcor']
+    output:
+        temp(directory(os.path.join(config['output_dir'], 'corrected_kmers')))
+    shell:
+        'source activate qc; '
+        '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
+        '-od {output} {params}) 2> {log}'
