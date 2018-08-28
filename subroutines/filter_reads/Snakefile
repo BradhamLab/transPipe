@@ -1,0 +1,59 @@
+# system level imports
+import os
+import sys
+
+# add scripts to python path for utilitiy functions
+sys.path.append('../../scripts/python')
+from utils import link_ids_to_input
+
+
+configfile: '../../files/config.yaml'
+print(config)
+SAMPLE_DICT = link_ids_to_input(config['dirs']['filter_dir'],
+                                config['sample_regex']['id'],
+                                config['sample_regex']['replicate'])
+SAMPLES = list(SAMPLE_DICT.keys())[0]
+ENDS = sorted(list(config['dataset']['ends'].keys()))
+print([each for each in zip([SAMPLES], ENDS)])
+rule all:
+    input:
+        expand(os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{read}.fastq.gz'), sample=SAMPLES,
+                        read=ENDS)
+
+rule correct_kmers:
+    input:
+        r1=os.path.join(config['dirs']['filter_dir'],
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['filter_dir'],
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
+    log:
+        os.path.join(config['dirs']['logs'], 'rCorrector', '{sample}.log')
+    params:
+        dir=os.path.join(config['dirs']['output'], 'corrected_kmers'),
+        extra=config['params']['rcor']
+    output:
+        r1=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
+    shell:
+        'source activate qc; '
+        '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
+        '-od {params.dir} {params.extra}) 2> {log}'
+
+rule parse_corrected:
+    input:
+        r1=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
+    log:
+        os.path.join(config['dirs']['logs'], 'ReadCorrection', '{sample}.log')
+    output:
+        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
+    script:
+        "../../scripts/python/FilterUncorrectabledPEfastq.py"
