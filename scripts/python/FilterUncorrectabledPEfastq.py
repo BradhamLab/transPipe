@@ -26,9 +26,11 @@ or gzipped files on the fly, so long as the gzipped files end with 'gz'.
 
 import sys        
 import gzip
-from itertools import izip, izip_longest
+from itertools import zip_longest
 import argparse
 from os.path import basename
+from collections import namedtuple
+import os
 
 def get_input_streams(r1file,r2file):
     if r1file[-2:]=='gz':
@@ -45,18 +47,36 @@ def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
     args = [iter(iterable)] * n
-    return izip_longest(fillvalue=fillvalue, *args)  
+    return zip_longest(fillvalue=fillvalue, *args)  
     
 
-if __name__=="__main__": 
-    parser = argparse.ArgumentParser(description="options for filtering and logging rCorrector fastq outputs")
-    parser.add_argument('-1','--left_reads',dest='leftreads',type=str,help='R1 fastq file')
-    parser.add_argument('-2','--right_reads',dest='rightreads',type=str,help='R2 fastq file')
-    parser.add_argument('-o','--out_prefix',dest='outprefix',type=str,help="prefix for filtered fastq output")
-    opts = parser.parse_args()
+if __name__=="__main__":
+    snakemake_exists = True
+    log_out = 'rmunfixable.log'
 
-    r1out=open(opts.outprefix+'_'+basename(opts.leftreads).replace('.gz',''),'w')
-    r2out=open(opts.outprefix+'_'+basename(opts.rightreads).replace('.gz','') ,'w')
+    try:
+        snakemake
+    except NameError:
+        snakemake_exists = False
+    
+    if snakemake_exists:
+        opts = namedtuple('Opts', ['leftreads', 'rightreads', 'outprefix'])
+        opts.leftreads = snakemake.input['R1']
+        opts.rightreads = snakemake.input['R2']
+        opts.outprefix = snakemake.input['dir']
+        log_out = os.path.join(snakemake.input['log'], 'rmunfixable.log')
+    else:
+        parser = argparse.ArgumentParser(description="options for filtering and logging rCorrector fastq outputs")
+        parser.add_argument('-1','--left_reads',dest='leftreads',type=str,
+                            help='R1 fastq file')
+        parser.add_argument('-2','--right_reads',dest='rightreads',type=str,
+                            help='R2 fastq file')
+        parser.add_argument('-o','--out_prefix',dest='outprefix',type=str,
+                            help="prefix for filtered fastq output")
+        opts = parser.parse_args()
+
+    r1out=open(opts.outprefix + basename(opts.leftreads).replace('.gz',''),'w')
+    r2out=open(opts.outprefix + basename(opts.rightreads).replace('.gz',''),'w')
 
     r1_cor_count=0
     r2_cor_count=0
@@ -72,10 +92,21 @@ if __name__=="__main__":
         for entry in R1:
             counter+=1
             if counter%100000==0:
-                print "%s reads processed" % counter
-        
-            head1,seq1,placeholder1,qual1=[i.strip() for i in entry]
-            head2,seq2,placeholder2,qual2=[j.strip() for j in R2.next()]
+                print("{} reads processed".format(counter))
+
+            # Get R2 read
+            R2_entry = next(R2)
+
+            # convert bytes to string
+            entry = tuple(x.decode(encoding='UTF-8') for x in entry\
+                          if isinstance(x, bytes))
+            R2_entry = tuple(x.decode(encoding='UTF-8') for x in R2_entry\
+                          if isinstance(x, bytes))
+
+
+            head1, seq1, placeholder1, qual1 = [i.strip() for i in entry]
+            head2, seq2, placeholder2, qual2  = [j.strip() for j in R2_entry]
+            
             
             if 'unfixable' in head1 or 'unfixable' in head2:
                 unfix_count+=1
@@ -94,7 +125,7 @@ if __name__=="__main__":
                 r1out.write('%s\n' % '\n'.join([head1,seq1,placeholder1,qual1]))
                 r2out.write('%s\n' % '\n'.join([head2,seq2,placeholder2,qual2]))
 
-    unfix_log=open('rmunfixable.log','w')
+    unfix_log=open(log_out, 'w')
     unfix_log.write('total PE reads:%s\nremoved PE reads:%s\nretained PE reads:%s\nR1 corrected:%s\nR2 corrected:%s\npairs corrected:%s\n' % (counter,unfix_count,counter-unfix_count,r1_cor_count,r2_cor_count,pair_cor_count))
             
     r1out.close()
