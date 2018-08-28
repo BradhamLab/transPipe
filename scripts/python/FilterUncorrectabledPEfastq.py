@@ -24,13 +24,14 @@ or gzipped files on the fly, so long as the gzipped files end with 'gz'.
 
 """
 
-import sys        
-import gzip
-from itertools import zip_longest
 import argparse
-from os.path import basename
-from collections import namedtuple
+import gzip
 import os
+import sys
+from collections import namedtuple
+from itertools import zip_longest
+from os.path import basename
+
 
 def get_input_streams(r1file,r2file):
     if r1file[-2:]=='gz':
@@ -61,10 +62,12 @@ if __name__=="__main__":
     
     if snakemake_exists:
         opts = namedtuple('Opts', ['leftreads', 'rightreads', 'outprefix'])
-        opts.leftreads = snakemake.input['R1']
-        opts.rightreads = snakemake.input['R2']
-        opts.outprefix = snakemake.input['dir']
-        log_out = os.path.join(snakemake.input['log'], 'rmunfixable.log')
+        opts.leftreads = snakemake.input['r1']
+        opts.rightreads = snakemake.input['r2']
+        r1_fastq = snakemake.output['r1']
+        r2_fastq = snakemake.output['r2']
+        print(snakemake.log[0])
+        log_out = os.path.join(snakemake.log[0], 'rmunfixable.log')
     else:
         parser = argparse.ArgumentParser(description="options for filtering and logging rCorrector fastq outputs")
         parser.add_argument('-1','--left_reads',dest='leftreads',type=str,
@@ -74,9 +77,11 @@ if __name__=="__main__":
         parser.add_argument('-o','--out_prefix',dest='outprefix',type=str,
                             help="prefix for filtered fastq output")
         opts = parser.parse_args()
-
-    r1out=open(opts.outprefix + basename(opts.leftreads).replace('.gz',''),'w')
-    r2out=open(opts.outprefix + basename(opts.rightreads).replace('.gz',''),'w')
+        r1_fastq = opts.outprefix + basename(opts.leftreads).replace('.gz', '')
+        r2_fastq = opts.outprefix + basename(opts.rightreads).replace('.gz', '')
+    
+    r1out=gzip.open(r1_fastq, 'w')
+    r2out=gzip.open(r2_fastq, 'w')
 
     r1_cor_count=0
     r2_cor_count=0
@@ -118,12 +123,17 @@ if __name__=="__main__":
                 if 'cor' in head1 or 'cor' in head2:
                     pair_cor_count+=1
                 
-                head1=head1.split('l:')[0][:-1] # keeps all before the low kmer count statistic and removes the trailing whitespace character
-                head2=head2.split('l:')[0][:-1] 
-                #head1=head1.replace(' cor','')
-                #head2=head2.replace(' cor','')
-                r1out.write('%s\n' % '\n'.join([head1,seq1,placeholder1,qual1]))
-                r2out.write('%s\n' % '\n'.join([head2,seq2,placeholder2,qual2]))
+                head1 = head1.split('l:')[0][:-1] # keeps all before the low kmer count statistic and removes the trailing whitespace character
+                head2 = head2.split('l:')[0][:-1] 
+                head1 = head1.replace(' cor', '')
+                head2 = head2.replace(' cor', '')
+
+                r1_string = '%s\n' % '\n'.join([head1, seq1, placeholder1,
+                                                qual1])
+                r1out.write(r1_string.encode())
+                r2_string = '%s\n' % '\n'.join([head2, seq2, placeholder2,
+                                                qual2]).encode()
+                r2out.write(r2_string.encode())
 
     unfix_log=open(log_out, 'w')
     unfix_log.write('total PE reads:%s\nremoved PE reads:%s\nretained PE reads:%s\nR1 corrected:%s\nR2 corrected:%s\npairs corrected:%s\n' % (counter,unfix_count,counter-unfix_count,r1_cor_count,r2_cor_count,pair_cor_count))
