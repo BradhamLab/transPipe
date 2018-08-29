@@ -1,0 +1,48 @@
+# system level imports
+import os
+import sys
+
+# add scripts to python path for utility functions
+sys.path.append('../../scripts/python')
+import utils
+
+# retrieve config file
+configfile: '../../files/config.yaml'
+config = utils.configure_run(config)
+
+# set global parameter values
+END_KEYS = sorted(list(config['dataset']['ends'].keys()))
+DIRNAMES = utils.link_ids_to_input(config['dirs']['data'],
+                                   config['sample_regex']['id'],
+                                   config['sample_regex']['replicate'])
+rule all:
+    input:
+        expand(os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                            '{sample}_{end}_qc.fastq.gz'),
+               sample=list(DIRNAMES.keys()), end=config['end_denote'])
+        
+
+# AfterQC with fastp
+rule fastp_qc:
+    input:
+        r1=os.path.join(config['dirs']['output'], 'fastq', '{sample}',
+                        '{sample}' + '_{}.fastq.gz'.format(END_KEYS[0])),
+        r2=os.path.join(config['dirs']['output'], 'fastq', '{sample}',
+                        '{sample}' + '_{}.fastq.gz'.format(END_KEYS[1]))
+    log:
+        os.path.join(config['dirs']['log'], 'fastp/{sample}.log')
+    params:
+        p1=config['params']['fastp']
+    output:
+        r1=os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(END_KEYS[0])),
+        r2=os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(END_KEYS[1])),
+        html=os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                          'fastp.html'),
+        json=os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                          'fastp.json')
+    shell:
+        'source activate qc;'
+        '(fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
+        '{output.r2} -h {output.html} -j {output.json}) 2> {log}'
