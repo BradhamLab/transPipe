@@ -22,9 +22,9 @@ ENDS = sorted(list(config['dataset']['ends'].keys()))
 
 rule all:
     input:
-        expand(os.path.join(config['dirs']['output'], 'corrected_reads',
-                        '{sample}' + '_{read}.fastq.gz'), sample=SAMPLES,
-                        read=ENDS)
+        expand(os.path.join(config['dirs']['output'], 'star', 'alignments',
+                            '{sample}', '{sample}Aligned.out.bam'),
+               sample=SAMPLES)
 
 # correct kmers 
 rule correct_kmers:
@@ -34,15 +34,15 @@ rule correct_kmers:
         r2=os.path.join(config['dirs']['filter_dir'],
                                '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
     log:
-        os.path.join(config['dirs']['logs'], 'rCorrector', '{sample}.log')
+        os.path.join(config['dirs']['log'], 'rCorrector', '{sample}.log')
     params:
         dir=os.path.join(config['dirs']['output'], 'corrected_kmers'),
         extra=config['params']['rcor']
     output:
-        r1=os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
+        r1=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0]))),
+        r2=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1])))
     shell:
         'source activate qc; '
         '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
@@ -57,7 +57,7 @@ rule parse_corrected:
         r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
                         '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
     log:
-        os.path.join(config['dirs']['logs'], 'ReadCorrection', '{sample}.log')
+        os.path.join(config['dirs']['log'], 'ReadCorrection', '{sample}.log')
     output:
         r1=os.path.join(config['dirs']['output'], 'corrected_reads',
                         '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
@@ -67,4 +67,27 @@ rule parse_corrected:
         "../../scripts/python/FilterUncorrectabledPEfastq.py"
 
 
-# perform fastp quality control + alignment via subworkflows
+# perform fastp quality control on corrected reads
+rule fastp_qc:
+    input:
+        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
+    log:
+        os.path.join(config['dirs']['log'], 'fastp', '{sample}.log')
+    params:
+        p1=config['params']['fastp']
+    output:
+        r1=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1])),
+        html=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                          'fastp.html'),
+        json=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                          'fastp.json')
+    shell:
+        'source activate qc;'
+        '(fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
+        '{output.r2} -h {output.html} -j {output.json}) 2> {log}'
