@@ -1,5 +1,6 @@
 import os
 import re
+import yaml
 
 def link_ids_to_input(data_dir, sample_regex, replicate_regex=''):
     """
@@ -33,3 +34,10 @@ def link_ids_to_input(data_dir, sample_regex, replicate_regex=''):
             data_loc = os.path.join(data_dir, sample_data)
             sample_dict[sample_id] = data_loc
     return sample_dict
+
+
+def configure_run(config_dict):
+    """Parse a run-specific configuration file."""
+    with open(config_dict['config'], 'r') as f:
+        config = yaml.load(f)
+    return config
