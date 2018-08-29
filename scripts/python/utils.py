@@ -119,10 +119,11 @@ def get_star_genome_files(star_dir):
     Returns:
         (list, string): list of output file paths.
     """
-    files = ['chrLength.txt', 'chrName.txt', 'chrNameLength.txt',
-             'chrStart.txt', 'exonGeTrInfo.tab', 'exonInfo.tab', 'geneInfo.tab',
-             'Genome', 'genomeParameters.txt', 'SA', 'SAIndex', 'sjdbInfo.txt',
-             'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab',
-             'transcriptInfo.tab']
+
+    files = ['chrLength.txt', 'exonInfo.tab', 'SAindex',
+             'chrNameLength.txt', 'geneInfo.tab', 'sjdbInfo.txt'
+             'chrName.txt', 'Genome', 'sjdbList.fromGTF.out.tab',
+             'chrStart.txt', 'genomeParameters.txt', 'sjdbList.out.tab',
+             'exonGeTrInfo.tab', 'SA', 'transcriptInfo.tab']
     out = [os.path.join(*each) for each in itertools.product([star_dir], files)]
     return out
