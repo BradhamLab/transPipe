@@ -1,3 +1,4 @@
+import itertools
 import os
 import re
 import subprocess as sbp
@@ -107,3 +108,21 @@ def get_star_genome_params(config_dict):
                                           config_dict['dataset']['read_length'])
         star_genome_params += ' --genomeChrBinNbits {}'.format(nbits)
     return star_genome_params
+
+
+def get_star_genome_files(star_dir):
+    """
+    Get file paths for all expected output files from genome indexing in STAR.
+
+    Args:
+        star_dir: directory where all output files will be written.
+    Returns:
+        (list, string): list of output file paths.
+    """
+    files = ['chrLength.txt', 'chrName.txt', 'chrNameLength.txt',
+             'chrStart.txt', 'exonGeTrInfo.tab', 'exonInfo.tab', 'geneInfo.tab',
+             'Genome', 'genomeParameters.txt', 'SA', 'SAIndex', 'sjdbInfo.txt',
+             'sjdbList.fromGTF.out.tab', 'sjdbList.out.tab',
+             'transcriptInfo.tab']
+    out = [os.path.join(*each) for each in itertools.product([star_dir], files)]
+    return out

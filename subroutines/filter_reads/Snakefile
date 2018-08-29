@@ -20,6 +20,10 @@ print(SAMPLES)
 SAMPLES = SAMPLES[0]
 ENDS = sorted(list(config['dataset']['ends'].keys()))
 
+# Create STAR genome folder if it does not already exist
+if not os.path.exists(config['dirs']['genome']):
+    os.makedirs(config['dirs']['genome'])
+
 rule all:
     input:
         expand(os.path.join(config['dirs']['output'], 'star', 'alignments',
@@ -101,16 +105,15 @@ rule star_generate_genome:
     params:
         read_length=(config['dataset']['read_length'] - 1),
         extra=utils.get_star_genome_params(config),
-        log=os.path.join(config['dirs']['log'], 'star')
+        log=os.path.join(config['dirs']['log'], 'star'),
+        genome=config['dirs']['genome']
     log:
         os.path.join(config['dirs']['log'], 'star', 'star_genome.log')
     output:
-        genome=protected(directory(os.path.join(config['dirs']['output'],
-                                   config['dirs']['genome'])))
+        utils.get_star_genome_files(config['dirs']['genome'])
     shell:
-        'source activate alignment; '
-        'mkdir {output.genome}; (STAR --runMode genomeGenerate '
-        '--genomeDir {output.genome} --genomeFastaFiles {input.fasta} '
+        'source activate alignment; (STAR --runMode genomeGenerate '
+        '--genomeDir {params.genome} --genomeFastaFiles {input.fasta} '
         '--sjdbGTFfile {input.gtf} --sjdbOverhang {params.read_length} '
         '--outFileNamePrefix {params.log} {params.extra}) 2> {log}'
 
@@ -118,14 +121,15 @@ rule star_generate_genome:
 # Align reads to genome using STAR
 rule star_align_reads:
     input:
+        utils.get_star_genome_files(config['dirs']['genome']),
         r1=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                         '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0])),
         r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
-                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1])),
-        genome=os.path.join(config['dirs']['genome'])
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1]))
     params:
         prefix=os.path.join(config['dirs']['output'], 'star', 'alignments',
                             '{sample}', '{sample}'),
+        genome=config['dirs']['genome'],
         extra=config['params']['star_align']
     log:
         os.path.join(config['dirs']['log'], 'star', '{sample}',
@@ -136,6 +140,6 @@ rule star_align_reads:
     shell:
         'source activate alignment; '
         '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
-        '--readFilesCommand zcat --genomeDir {input.genome} '
+        '--readFilesCommand zcat --genomeDir {params.genome} '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {input.r1} {input.r2} {params.extra}) 2> {log}'
