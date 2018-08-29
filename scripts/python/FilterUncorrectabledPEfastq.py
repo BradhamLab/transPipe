@@ -67,7 +67,7 @@ if __name__=="__main__":
         r1_fastq = snakemake.output['r1']
         r2_fastq = snakemake.output['r2']
         print(snakemake.log[0])
-        log_out = os.path.join(snakemake.log[0], 'rmunfixable.log')
+        log_out = snakemake.log[0]
     else:
         parser = argparse.ArgumentParser(description="options for filtering and logging rCorrector fastq outputs")
         parser.add_argument('-1','--left_reads',dest='leftreads',type=str,
