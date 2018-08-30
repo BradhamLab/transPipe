@@ -121,7 +121,7 @@ def get_star_genome_files(star_dir):
     """
 
     files = ['chrLength.txt', 'exonInfo.tab', 'SAindex',
-             'chrNameLength.txt', 'geneInfo.tab', 'sjdbInfo.txt'
+             'chrNameLength.txt', 'geneInfo.tab', 'sjdbInfo.txt',
              'chrName.txt', 'Genome', 'sjdbList.fromGTF.out.tab',
              'chrStart.txt', 'genomeParameters.txt', 'sjdbList.out.tab',
              'exonGeTrInfo.tab', 'SA', 'transcriptInfo.tab']
