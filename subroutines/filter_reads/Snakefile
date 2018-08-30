@@ -24,8 +24,8 @@ if not os.path.exists(config['dirs']['genome']):
 
 rule all:
     input:
-        expand(os.path.join(config['dirs']['output'], 'star', 'alignments',
-                            '{sample}', '{sample}Aligned.out.bam'),
+        expand(os.path.join(config['dirs']['output'], 'sorted_bams',
+                            '{sample}_sorted.bam'),
                sample=SAMPLES)
 
 # correct kmers 
@@ -81,9 +81,9 @@ rule fastp_qc:
     params:
         p1=config['params']['fastp']
     output:
-        temp(r1=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+        r1=temp(os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                         '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0]))),
-        temp(r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+        r2=temp(os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                         '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1]))),
         html=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                           'fastp.html'),
@@ -130,8 +130,7 @@ rule star_align_reads:
         genome=config['dirs']['genome'],
         extra=config['params']['star_align']
     log:
-        os.path.join(config['dirs']['log'], 'star', '{sample}',
-                     'star_alignment.log')
+        os.path.join(config['dirs']['log'], 'star', '{sample}_star.log')
     output:
         temp(os.path.join(config['dirs']['output'], 'star', 'alignments', '{sample}',
                     '{sample}Aligned.out.bam'))
@@ -148,7 +147,7 @@ rule filter_unmapped:
         bam=os.path.join(config['dirs']['output'], 'star', 'alignments',
                          '{sample}', '{sample}Aligned.out.bam')
     log:
-        os.path.join(config['dirs']['log'], '{sample}', 'filter.log')
+        os.path.join(config['dirs']['log'], 'map_filter' '{sample}_filter.log')
     output:
         bam=temp(os.path.join(config['dirs']['output'], 'filtered_bams',
                               '{sample}', '{sample}_mapped.bam'))
@@ -157,11 +156,16 @@ rule filter_unmapped:
         '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
 
 
-# sort filtered alignments
+# coorinate sort filtered alignments
 rule sort_mapped:
     input:
         bam=os.path.join(config['dirs']['output'], 'filtered_bams',
                               '{sample}', '{sample}_mapped.bam')
-
-
-    
+    log:
+        os.path.join(config['dirs']['log'], 'filter_sort', '{sample}_sort.log')
+    output:
+        bam=os.path.join(config['dirs']['output'], 'sorted_bams',
+                         '{sample}_sorted.bam')
+    shell:
+        'source activate alignment;'
+        '(samtools sort-o {output.bam} -O bam {input.bam}) 2> {log}'
