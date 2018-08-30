@@ -9,7 +9,7 @@ import utils
 configfile: '../../files/config.yaml'
 config = utils.configure_run(config)
 
-END_KEYS = sorted(list(config['end_denote'].keys()))
+END_KEYS = sorted(list(config['dataset']['ends'].keys()))
 DIRNAMES = utils.link_ids_to_input(config['dirs']['data'],
                                    config['sample_regex']['id'])
 IDS = list(DIRNAMES.keys())
@@ -21,13 +21,17 @@ def get_qc_output(samples, reads):
                                             '{0}_{1}_qc.fastq.gz'.format(s, r)))
     return expected_output
 
+# Run read quality control before alignment
+subworkflow quality_control:
+    workdir: "../qc"
+    snakefile: "../qc/Snakefile"
+
+
 rule all:
     input:
-        expand(os.path.join(config['dirs']['output'], 'counts', '{sample}.txt'),
-               sample=IDS),
-        expand(os.path.join(config['dirs']['output'], 'raw_counts', '{sample}',
-                            '{sample}.out'), sample=IDS)
-
+        expand(os.path.join(config['dirs']['output'], 'sorted_bams',
+                          '{sample}_sorted.bam'), sample=IDS)
+                          
 # Align with star
 rule star_generate_genome:
     input:
@@ -66,11 +70,25 @@ rule star_align_reads:
         os.path.join(config['dirs']['log'], 'star', '{sample}',
                      'star_alignment.log')
     output:
-        os.path.join(config['dirs']['output'], 'star', 'alignments', '{sample}',
-                    '{sample}Aligned.out.bam')
+        temp(os.path.join(config['dirs']['output'], 'star', 'alignments',
+                          '{sample}', '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
         '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
         '--readFilesCommand zcat --genomeDir {input.genome} '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {input.r1} {input.r2} {params.extra}) 2> {log}'
+
+# coorinate sort filtered alignments
+rule sort_mapped:
+    input:
+        bam=os.path.join(config['dirs']['output'], 'star', 'alignments',
+                              '{sample}', '{sample}Aligned.out.bam')
+    log:
+        os.path.join(config['dirs']['log'], 'filter_sort', '{sample}_sort.log')
+    output:
+        bam=os.path.join(config['dirs']['output'], 'sorted_bams',
+                         '{sample}_sorted.bam')
+    shell:
+        'source activate alignment;'
+        '(samtools sort-o {output.bam} -O bam {input.bam}) 2> {log}'
