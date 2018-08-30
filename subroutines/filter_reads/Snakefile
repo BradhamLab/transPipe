@@ -31,9 +31,9 @@ rule all:
 # correct kmers 
 rule correct_kmers:
     input:
-        r1=os.path.join(config['dirs']['filter_dir'],
+        r1=os.path.join(config['dirs']['filter'],
                                '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['filter_dir'],
+        r2=os.path.join(config['dirs']['filter'],
                                '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
     log:
         os.path.join(config['dirs']['log'], 'rCorrector', '{sample}.log')
@@ -141,6 +141,7 @@ rule star_align_reads:
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {input.r1} {input.r2} {params.extra}) 2> {log}'
 
+
 # Extract mapped reads
 rule filter_unmapped:
     input:
@@ -156,7 +157,7 @@ rule filter_unmapped:
         '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
 
 
-# coorinate sort filtered alignments
+# coordinate sort filtered alignments
 rule sort_mapped:
     input:
         bam=os.path.join(config['dirs']['output'], 'filtered_bams',
