@@ -81,10 +81,10 @@ rule fastp_qc:
     params:
         p1=config['params']['fastp']
     output:
-        r1=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
-                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
-                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1])),
+        temp(r1=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0]))),
+        temp(r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1]))),
         html=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                           'fastp.html'),
         json=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
@@ -133,11 +133,35 @@ rule star_align_reads:
         os.path.join(config['dirs']['log'], 'star', '{sample}',
                      'star_alignment.log')
     output:
-        os.path.join(config['dirs']['output'], 'star', 'alignments', '{sample}',
-                    '{sample}Aligned.out.bam')
+        temp(os.path.join(config['dirs']['output'], 'star', 'alignments', '{sample}',
+                    '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
         '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
         '--readFilesCommand zcat --genomeDir {params.genome} '
         '--outFileNamePrefix {params.prefix} '
         '--readFilesIn {input.r1} {input.r2} {params.extra}) 2> {log}'
+
+# Extract mapped reads
+rule filter_unmapped:
+    input:
+        bam=os.path.join(config['dirs']['output'], 'star', 'alignments',
+                         '{sample}', '{sample}Aligned.out.bam')
+    log:
+        os.path.join(config['dirs']['log'], '{sample}', 'filter.log')
+    output:
+        bam=temp(os.path.join(config['dirs']['output'], 'filtered_bams',
+                              '{sample}', '{sample}_mapped.bam'))
+    shell:
+        'source activate alignment; '
+        '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
+
+
+# sort filtered alignments
+rule sort_mapped:
+    input:
+        bam=os.path.join(config['dirs']['output'], 'filtered_bams',
+                              '{sample}', '{sample}_mapped.bam')
+
+
+    
