@@ -11,33 +11,74 @@ configfile: '../../files/config.yaml'
 config = utils.configure_run(config)
 
 # set global parameter values
-END_KEYS = sorted(list(config['dataset']['ends'].keys()))
+ENDS = sorted(list(config['dataset']['ends'].keys()))
 DIRNAMES = utils.link_ids_to_input(config['dirs']['data'],
                                    config['sample_regex']['id'],
                                    config['sample_regex']['replicate'])
+            
 rule all:
     input:
         expand(os.path.join(config['dirs']['output'], 'qc', '{sample}',
                             '{sample}_{end}_qc.fastq.gz'),
-               sample=list(DIRNAMES.keys()), end=config['end_denote'])
+               sample=list(DIRNAMES.keys()), end=ENDS)
         
+# correct kmers 
+rule correct_kmers:
+    input:
+        r1=os.path.join(config['dirs']['data'],
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['data'],
+                               '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
+    log:
+        os.path.join(config['dirs']['log'], 'rCorrector', '{sample}.log')
+    params:
+        dir=os.path.join(config['dirs']['output'], 'corrected_kmers'),
+        extra=config['params']['rcor']
+    output:
+        r1=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0]))),
+        r2=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1])))
+    shell:
+        'source activate qc; '
+        '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
+        '-od {params.dir} {params.extra}) 2> {log}'
 
-# AfterQC with fastp
+
+# filter uncorrectable kmers, remove 'cor' denoter in header
+rule parse_corrected:
+    input:
+        r1=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
+                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
+    log:
+        os.path.join(config['dirs']['log'], 'ReadCorrection', '{sample}.log')
+    output:
+        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
+    script:
+        "../../scripts/python/FilterUncorrectabledPEfastq.py"
+
+
+# perform fastp quality control on corrected reads
 rule fastp_qc:
     input:
-        r1=os.path.join(config['dirs']['output'], 'fastq', '{sample}',
-                        '{sample}' + '_{}.fastq.gz'.format(END_KEYS[0])),
-        r2=os.path.join(config['dirs']['output'], 'fastq', '{sample}',
-                        '{sample}' + '_{}.fastq.gz'.format(END_KEYS[1]))
+        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
+        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
+                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
     log:
-        os.path.join(config['dirs']['log'], 'fastp/{sample}.log')
+        os.path.join(config['dirs']['log'], 'fastp', '{sample}.log')
     params:
         p1=config['params']['fastp']
     output:
-        r1=os.path.join(config['dirs']['output'], 'qc', '{sample}',
-                        '{sample}' + '_{}_qc.fastq.gz'.format(END_KEYS[0])),
-        r2=os.path.join(config['dirs']['output'], 'qc', '{sample}',
-                        '{sample}' + '_{}_qc.fastq.gz'.format(END_KEYS[1])),
+        r1=temp(os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0]))),
+        r2=temp(os.path.join(config['dirs']['output'], 'qc', '{sample}',
+                        '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1]))),
         html=os.path.join(config['dirs']['output'], 'qc', '{sample}',
                           'fastp.html'),
         json=os.path.join(config['dirs']['output'], 'qc', '{sample}',
