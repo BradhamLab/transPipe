@@ -150,23 +150,8 @@ rule filter_unmapped:
     log:
         os.path.join(config['dirs']['log'], 'map_filter' '{sample}_filter.log')
     output:
-        bam=temp(os.path.join(config['dirs']['output'], 'filtered_bams',
-                              '{sample}', '{sample}_mapped.bam'))
+        bam=temp(os.path.join(config['dirs']['output'], 'alignments',
+                              '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
         '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
-
-
-# coordinate sort filtered alignments
-rule sort_mapped:
-    input:
-        bam=os.path.join(config['dirs']['output'], 'filtered_bams',
-                              '{sample}', '{sample}_mapped.bam')
-    log:
-        os.path.join(config['dirs']['log'], 'filter_sort', '{sample}_sort.log')
-    output:
-        bam=os.path.join(config['dirs']['output'], 'sorted_bams',
-                         '{sample}_sorted.bam')
-    shell:
-        'source activate alignment;'
-        '(samtools sort-o {output.bam} -O bam {input.bam}) 2> {log}'
