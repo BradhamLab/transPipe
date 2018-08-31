@@ -24,8 +24,8 @@ if not os.path.exists(config['dirs']['genome']):
 
 rule all:
     input:
-        expand(os.path.join(config['dirs']['output'], 'sorted_bams',
-                            '{sample}_sorted.bam'),
+        expand(os.path.join(config['dirs']['output'], 'alignments',
+                              '{sample}Aligned.out.bam'),
                sample=SAMPLES)
 
 # correct kmers 
@@ -150,8 +150,8 @@ rule filter_unmapped:
     log:
         os.path.join(config['dirs']['log'], 'map_filter' '{sample}_filter.log')
     output:
-        bam=temp(os.path.join(config['dirs']['output'], 'alignments',
-                              '{sample}Aligned.out.bam'))
+        bam=os.path.join(config['dirs']['output'], 'alignments',
+                              '{sample}Aligned.out.bam')
     shell:
         'source activate alignment; '
         '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
