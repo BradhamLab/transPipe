@@ -10,7 +10,7 @@ import utils
 configfile: '../../files/config.yaml'
 config = utils.configure_run(config)
 
-SAMPLE_DICT = utils.link_ids_to_input(config['dirs']['filter_dir'],
+SAMPLE_DICT = utils.link_ids_to_input(config['dirs']['filter'],
                                       config['sample_regex']['id'],
                                       config['sample_regex']['replicate'])
 
@@ -145,7 +145,7 @@ rule star_align_reads:
 # Extract mapped reads
 rule filter_unmapped:
     input:
-        bam=os.path.join(config['dirs']['output'], 'star', 'alignments',
+        bam=os.path.join(config['dirs']['output'], 'star', 'filter_alignments',
                          '{sample}', '{sample}Aligned.out.bam')
     log:
         os.path.join(config['dirs']['log'], 'map_filter' '{sample}_filter.log')
