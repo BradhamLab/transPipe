@@ -125,15 +125,15 @@ rule star_align_reads:
         r2=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                         '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[1]))
     params:
-        prefix=os.path.join(config['dirs']['output'], 'star', 'alignments',
-                            '{sample}', '{sample}'),
+        prefix=os.path.join(config['dirs']['output'], 'alignments', '{sample}',
+                            '{sample}'),
         genome=config['dirs']['genome'],
         extra=config['params']['star_align']
     log:
         os.path.join(config['dirs']['log'], 'star', '{sample}_star.log')
     output:
-        temp(os.path.join(config['dirs']['output'], 'star', 'filter_alignments', '{sample}',
-                    '{sample}Aligned.out.bam'))
+        temp(os.path.join(config['dirs']['output'], 'filter_alignments',
+                          '{sample}', '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
         '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
@@ -145,7 +145,7 @@ rule star_align_reads:
 # Extract mapped reads
 rule filter_unmapped:
     input:
-        bam=os.path.join(config['dirs']['output'], 'star', 'filter_alignments',
+        bam=os.path.join(config['dirs']['output'], 'filter_alignments',
                          '{sample}', '{sample}Aligned.out.bam')
     log:
         os.path.join(config['dirs']['log'], 'map_filter' '{sample}_filter.log')

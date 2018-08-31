@@ -63,15 +63,15 @@ rule star_align_reads:
                         '{sample}' + '_{}_qc.fastq.gz'.format(END_KEYS[1])),
         genome=os.path.join(config['dirs']['genome'])
     params:
-        prefix=os.path.join(config['dirs']['output'], 'star', 'alignments',
+        prefix=os.path.join(config['dirs']['output'], 'alignments',
                             '{sample}', '{sample}'),
         extra=config['params']['star_align']
     log:
         os.path.join(config['dirs']['log'], 'star', '{sample}',
                      'star_alignment.log')
     output:
-        os.path.join(config['dirs']['output'], 'star', 'alignments',
-                     '{sample}', '{sample}Aligned.out.bam')
+        os.path.join(config['dirs']['output'], 'alignments',
+                     '{sample}Aligned.out.bam')
     shell:
         'source activate alignment; '
         '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
