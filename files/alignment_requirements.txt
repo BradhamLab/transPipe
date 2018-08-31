@@ -13,7 +13,6 @@ https://conda.anaconda.org/bioconda/linux-64/libdeflate-1.0-h470a237_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/openssl-1.0.2p-h470a237_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/xz-5.2.4-h470a237_1.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/zlib-1.2.11-h470a237_3.tar.bz2
-https://conda.anaconda.org/bioconda/linux-64/bedtools-2.27.1-he941832_2.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/libssh2-1.8.0-h5b517e9_2.tar.bz2
 https://conda.anaconda.org/bioconda/linux-64/subread-1.6.2-ha92aebf_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/curl-7.61.0-h93b3f91_1.tar.bz2
