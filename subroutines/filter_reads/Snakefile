@@ -132,7 +132,7 @@ rule star_align_reads:
     log:
         os.path.join(config['dirs']['log'], 'star', '{sample}_star.log')
     output:
-        temp(os.path.join(config['dirs']['output'], 'star', 'alignments', '{sample}',
+        temp(os.path.join(config['dirs']['output'], 'star', 'filter_alignments', '{sample}',
                     '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
