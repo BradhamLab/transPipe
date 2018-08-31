@@ -10,27 +10,78 @@ import utils
 configfile: '../../files/config.yaml'
 config = utils.configure_run(config)
 
+filter_dict = utils.link_ids_to_input(config['dirs']['filter'],
+                                      config['sample_regex']['id'],
+                                      config['sample_regex']['replicate'])
+align_dict = utils.link_ids_to_input(config['dirs']['data'],
+                                     config['sample_regex']['id'],
+                                     config['sample_regex']['replicate'])
+
+alig_dir = os.path.join(config['dirs']['output'], 'alignments')
+
+align_output = [os.path.join(alig_dir, '{}Aligned.out.bam'.format(x))\
+                for x in align_dict.keys()][0]
+filter_output = [os.path.join(alig_dir, '{}Aligned.out.bam'.format(x))\
+                 for x in filter_dict.keys()][1]
+
+
 rule all:
     input:
         os.path.join(config['dirs']['output'], 'trinity', 'Trinity.fasta')
 
+# Run align reads to genome
+subworkflow align_reads:
+    workdir: "../alignment"
+    snakefile: "../alignment/Snakefile"
 
+# Align reads to genome, filter out non-hits 
+subworkflow  filter_reads:
+    workdir: "../filter_reads"
+    snakefile: "../filter_reads/Snakefile"
+
+# merge all samples into single bam
 rule merge_bams:
+    input:
+        align_reads(align_output),
+        filter_reads(filter_output)
     params:
         dir=os.path.join(config['dirs']['output'], 'alignments', '*.bam')
+    log:
+        os.path.join(config['dirs']['log'], 'bam_merge', 'out.log')
+    output:
+        temp(os.path.join(config['dirs']['output'], 'bam_merge', 'merged.bam'))
+    shell:
+        "source activate alignment; (samtools merge {output} {params.dir}) 2> "
+        "{log}"
+
+
+# sort bam
+rule sort_bams:
+    input:
+        os.path.join(config['dirs']['output'], 'bam_merge', 'merged.bam')
+    log:
+        os.path.join(config['dirs']['log'], 'bam_sort', 'sort.log')
+    output:
+        os.path.join(config['dirs']['output'], 'bam_sort', 'sorted.bam')
+    shell:
+        "source activate alignment; (samtools sort -o {output} -O bam {input}) "
+        "2> {log}"
     
 
 
-rule assembly_transcriptome:
+rule assemble_transcriptome:
+    input:
+        os.path.join(config['dirs']['output'], 'bam_sort', 'sorted.bam')
     params:
-        dir=os.path.join(config['dirs']['output'], 'sorted_alignments',
-                         '*.bam'),
         extra=config['params']['trinity']
+    log:
+        os.path.join(config['dirs']['log'], 'trinity', 'trinity.log')
     output:
         os.path.join(config['dirs']['output'], 'trinity', 'Trinity.fasta')
     shell:
-        "source activate assembly; Trinity --genome_guided_bam {params.dir} "
-        "--genome_guided_max_intron 10000 --output {output} {params.extra}"
+        "source activate alignment; (Trinity --genome_guided_bam {input} "
+        "--genome_guided_max_intron 10000 --output {output} {params.extra}) "
+        "2> {log}"
 
     
     
