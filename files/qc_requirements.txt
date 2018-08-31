@@ -1,0 +1,12 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+@EXPLICIT
+https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-7.2.0-hdf63c60_3.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-7.2.0-hdf63c60_3.tar.bz2
+https://repo.anaconda.com/pkgs/main/linux-64/libgcc-7.2.0-h69d50b8_2.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/zlib-1.2.11-h470a237_3.tar.bz2
+https://conda.anaconda.org/bioconda/linux-64/fastp-0.19.3-hd28b015_0.tar.bz2
+https://conda.anaconda.org/bioconda/linux-64/jemalloc-4.5.0-0.tar.bz2
+https://conda.anaconda.org/bioconda/linux-64/jellyfish-2.2.10-h2d50403_0.tar.bz2
+https://conda.anaconda.org/bioconda/linux-64/rcorrector-1.0.3-hd28b015_0.tar.bz2
