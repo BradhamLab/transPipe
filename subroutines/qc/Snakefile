@@ -40,7 +40,7 @@ rule correct_kmers:
         r2=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
                         '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1])))
     shell:
-        'source activate qc; '
+        'source activate alignment; '
         '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
         '-od {params.dir} {params.extra}) 2> {log}'
 
@@ -84,6 +84,6 @@ rule fastp_qc:
         json=os.path.join(config['dirs']['output'], 'qc', '{sample}',
                           'fastp.json')
     shell:
-        'source activate qc;'
+        'source activate alignment;'
         '(fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
         '{output.r2} -h {output.html} -j {output.json}) 2> {log}'

@@ -1,0 +1,36 @@
+# system level imports
+import os
+import sys
+
+# add scripts to python path for utilitiy functions
+sys.path.append('../../scripts/python')
+import utils
+
+
+configfile: '../../files/config.yaml'
+config = utils.configure_run(config)
+
+rule all:
+    input:
+        os.path.join(config['dirs']['output'], 'trinity', 'Trinity.fasta')
+
+
+rule merge_bams:
+    params:
+        dir=os.path.join(config['dirs']['output'], 'alignments', '*.bam')
+    
+
+
+rule assembly_transcriptome:
+    params:
+        dir=os.path.join(config['dirs']['output'], 'sorted_alignments',
+                         '*.bam'),
+        extra=config['params']['trinity']
+    output:
+        os.path.join(config['dirs']['output'], 'trinity', 'Trinity.fasta')
+    shell:
+        "source activate assembly; Trinity --genome_guided_bam {params.dir} "
+        "--genome_guided_max_intron 10000 --output {output} {params.extra}"
+
+    
+    
