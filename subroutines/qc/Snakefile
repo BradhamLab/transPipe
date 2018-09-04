@@ -21,55 +21,15 @@ rule all:
         expand(os.path.join(config['dirs']['output'], 'qc', '{sample}',
                             '{sample}_{end}_qc.fastq.gz'),
                sample=list(DIRNAMES.keys()), end=ENDS)
-        
-# correct kmers 
-rule correct_kmers:
+
+
+# perform fastp quality control
+rule fastp_qc:
     input:
         r1=os.path.join(config['dirs']['data'],
                                '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
         r2=os.path.join(config['dirs']['data'],
                                '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
-    log:
-        os.path.join(config['dirs']['log'], 'rCorrector', '{sample}.log')
-    params:
-        dir=os.path.join(config['dirs']['output'], 'corrected_kmers'),
-        extra=config['params']['rcor']
-    output:
-        r1=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0]))),
-        r2=temp(os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1])))
-    shell:
-        'source activate alignment; '
-        '(perl $CONDA_PREFIX"/bin/run_rcorrector.pl" -1 {input.r1} -2 {input.r2} '
-        '-od {params.dir} {params.extra}) 2> {log}'
-
-
-# filter uncorrectable kmers, remove 'cor' denoter in header
-rule parse_corrected:
-    input:
-        r1=os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['output'], 'corrected_kmers',
-                        '{sample}' + '_{}.cor.fq.gz'.format(ENDS[1]))
-    log:
-        os.path.join(config['dirs']['log'], 'ReadCorrection', '{sample}.log')
-    output:
-        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
-                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
-                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
-    script:
-        "../../scripts/python/FilterUncorrectabledPEfastq.py"
-
-
-# perform fastp quality control on corrected reads
-rule fastp_qc:
-    input:
-        r1=os.path.join(config['dirs']['output'], 'corrected_reads',
-                        '{sample}' + '_{}.fastq.gz'.format(ENDS[0])),
-        r2=os.path.join(config['dirs']['output'], 'corrected_reads',
-                        '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
     log:
         os.path.join(config['dirs']['log'], 'fastp', '{sample}.log')
     params:
