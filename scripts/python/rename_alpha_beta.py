@@ -64,7 +64,7 @@ def rename_and_move_fastq_files(top_dir, read_denotes, ext, dst_dir):
                     new_name = rename_file(file, base, read_regex)
                     if new_name is not None:
                         orig_file = os.path.join(root, file)
-                        new_file = os.path.join(root, new_name)
+                        new_file = os.path.join(dst_dir, new_name)
                         print("Re-naming: {}\nNew name: {}\n".format(orig_file,
                                                                      new_file))
                         shutil.move(orig_file, new_file)
@@ -77,9 +77,13 @@ if __name__ == "__main__":
                         help='Current filename denotor for right read.')
     parser.add_argument('-2','--left_read', dest='leftread', type=str,
                         help="Current filename denotor for left read.")
+    parser.add_argument('-e', '--extension', dest='ext', type=str,
+                        help='Extension used to demark fastq files.')
     parser.add_argument('-d', '--out_dir', dest='out_dir', type=str,
                         help="Output directory for fastq files.")
     opts = parser.parse_args()
     rename_and_move_fastq_files(top_dir=opts.in_dir,
                                 read_denotes=[opts.rightread, opts.leftread],
-                                ext='fq', dst_dir=opts.out_dir)
+                                ext=opts.ext, dst_dir=opts.out_dir)
+
+# ../NEW_sequencingData_20150701_copy/NEW_sequencingData_20150701/F15FTSAPJT0075_SEAaysE/Clean/
