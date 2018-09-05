@@ -1,15 +1,20 @@
-"""Rename original fastq files on the scc for alpha and beta transcriptomes."""
+"""
+Rename/move original fastq files on the scc for alpha and beta transcriptomes.
 
+Author: Dakota Hawkins
+Date: September 5, 2018
+"""
+
+import argparse
 import itertools
 import os
 import re
-import sys
 import shutil
 
 
 def compile_read_regex(read_tags, file_extension):
     """Generate regular expressions to disern direction in paired-end reads."""
-    read_regex = [re.compile('{}\.{}$'.format(x, y))\
+    read_regex = [re.compile(r'{}\.{}$'.format(x, y))\
                   for x, y in itertools.product(read_tags, [file_extension])]
     return read_regex
 
@@ -32,7 +37,7 @@ def rename_file(filename, prefix, read_regex):
         return prefix + '_R2.' + 'fastq'
     return None
 
-def rename_and_move_fastq_files(top_dir, read_denotes, ext):
+def rename_and_move_fastq_files(top_dir, read_denotes, ext, dst_dir):
     """
     Move and rename raw fastq files in a directory tree.
 
@@ -62,6 +67,19 @@ def rename_and_move_fastq_files(top_dir, read_denotes, ext):
                         new_file = os.path.join(root, new_name)
                         print("Re-naming: {}\nNew name: {}\n".format(orig_file,
                                                                      new_file))
-                        shutil.copyfile(orig_file, new_file)
+                        shutil.move(orig_file, new_file)
 
-    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Move and rename fastq files.")
+    parser.add_argument('-i','--input_dir', dest='in_dir', type=str,
+                        help='Top level directory containing sample directories.')
+    parser.add_argument('-1','--right_read', dest='rightread', type=str,
+                        help='Current filename denotor for right read.')
+    parser.add_argument('-2','--left_read', dest='leftread', type=str,
+                        help="Current filename denotor for left read.")
+    parser.add_argument('-d', '--out_dir', dest='out_dir', type=str,
+                        help="Output directory for fastq files.")
+    opts = parser.parse_args()
+    rename_and_move_fastq_files(top_dir=opts.in_dir,
+                                read_denotes=[opts.rightread, opts.leftread],
+                                ext='fq', dst_dir=opts.out_dir)
