@@ -15,7 +15,6 @@ SAMPLE_DICT = utils.link_ids_to_input(config['dirs']['filter'],
                                       config['sample_regex']['replicate'])
 
 SAMPLES = sorted(list(SAMPLE_DICT.keys()))
-SAMPLES = SAMPLES[0]
 ENDS = sorted(list(config['dataset']['ends'].keys()))
 
 # Create STAR genome folder if it does not already exist
