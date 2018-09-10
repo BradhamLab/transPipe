@@ -52,21 +52,17 @@ rule merge_bams:
     output:
         temp(os.path.join(config['dirs']['output'], 'bam_merge', 'merged.bam'))
     shell:
-        "source activate alignment; (samtools merge {output} {params.dir}) 2> "
-        "{log}"
+        "source activate alignment; samtools merge {output} {params.dir}"
 
 
 # sort bam
 rule sort_bams:
     input:
         os.path.join(config['dirs']['output'], 'bam_merge', 'merged.bam')
-    log:
-        os.path.join(config['dirs']['log'], 'bam_sort', 'sort.log')
     output:
         os.path.join(config['dirs']['output'], 'bam_sort', 'sorted.bam')
     shell:
-        "source activate alignment; (samtools sort -o {output} -O bam {input}) "
-        "2> {log}"
+        "source activate alignment; samtools sort -o {output} -O bam {input}"
     
 
 
@@ -75,14 +71,11 @@ rule assemble_transcriptome:
         os.path.join(config['dirs']['output'], 'bam_sort', 'sorted.bam')
     params:
         extra=config['params']['trinity']
-    log:
-        os.path.join(config['dirs']['log'], 'trinity', 'trinity.log')
     output:
         os.path.join(config['dirs']['output'], 'trinity', 'Trinity.fasta')
     shell:
-        "source activate alignment; (Trinity --genome_guided_bam {input} "
-        "--genome_guided_max_intron 10000 --output {output} {params.extra}) "
-        "2> {log}"
+        "source activate alignment; Trinity --genome_guided_bam {input} "
+        "--genome_guided_max_intron 10000 --output {output} {params.extra}"
 
     
     
