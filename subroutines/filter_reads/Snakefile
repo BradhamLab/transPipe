@@ -46,7 +46,7 @@ rule fastp_qc:
         json=os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                           'fastp.json')
     shell:
-        'source activate alignment;'
+        'source activate qc;'
         'fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
         '{output.r2} -h {output.html} -j {output.json}'
 
@@ -103,9 +103,4 @@ rule filter_unmapped:
         bam=os.path.join(config['dirs']['output'], 'alignments',
                               '{sample}Aligned.out.bam')
     shell:
-<<<<<<< HEAD
         'source activate alignment; samtools view -F4 {input.bam} > {output.bam}'
-=======
-        'source activate alignment; '
-        '(samtools view -F4 {input.bam} > {output.bam}) 2> {log}'
->>>>>>> 88eabe7e57d7179fe704dd9dfc6a1078186e05fd
