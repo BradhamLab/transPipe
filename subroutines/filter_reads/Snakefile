@@ -1,10 +1,16 @@
 # system level imports
 import os
 import sys
+import socket
 
 # add scripts to python path for utilitiy functions
 sys.path.append('../../scripts/python')
 import utils
+
+# load java module if on scc
+if 'scc' in socket.gethostname():
+    shell.prefix('module load java; ')
+
 
 
 configfile: '../../files/config.yaml'
