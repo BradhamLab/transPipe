@@ -1,10 +1,13 @@
 import sys
-
+import socket
 from itertools import product 
 
 # add scripts to python path for utility functions
 sys.path.append('../../scripts/python')
 import utils
+
+if 'scc' in socket.gethostname():
+    shell.prefix('module load java; set -eua pipefail; ')
 
 configfile: '../../files/config.yaml'
 config = utils.configure_run(config)
