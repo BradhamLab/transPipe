@@ -42,6 +42,8 @@ rule fastp_qc:
                         '{sample}' + '_{}.fastq.gz'.format(ENDS[1]))
     params:
         p1=config['params']['fastp']
+    log:
+        os.path.join(config['dirs']['log'], 'fastp', '{sample}.log')
     output:
         r1=temp(os.path.join(config['dirs']['output'], 'filter_qc', '{sample}',
                         '{sample}' + '_{}_qc.fastq.gz'.format(ENDS[0]))),
@@ -53,8 +55,8 @@ rule fastp_qc:
                           'fastp.json')
     shell:
         'source activate alignment;'
-        'fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
-        '{output.r2} -h {output.html} -j {output.json}'
+        '(fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
+        '{output.r2} -h {output.html} -j {output.json}) 2> {log}'
 
 
 # Create genome index with STAR
@@ -70,10 +72,10 @@ rule star_generate_genome:
     output:
         utils.get_star_genome_files(config['dirs']['genome'])
     shell:
-        'source activate alignment; STAR --runMode genomeGenerate '
+        'source activate alignment; (STAR --runMode genomeGenerate '
         '--genomeDir {params.genome} --genomeFastaFiles {input.fasta} '
         '--sjdbGTFfile {input.gtf} --sjdbOverhang {params.read_length} '
-        '--outFileNamePrefix {params.log} {params.extra}'
+        '--outFileNamePrefix {params.log} {params.extra}) 2> {log}'
 
 
 # Align reads to genome using STAR
@@ -89,15 +91,17 @@ rule star_align_reads:
                             '{sample}', '{sample}'),
         genome=config['dirs']['genome'],
         extra=config['params']['star_align']
+    log:
+        os.path.join(config['dirs']['log'], 'star_align', '{sample}.log')
     output:
         temp(os.path.join(config['dirs']['output'], 'filter_alignments',
                           '{sample}', '{sample}Aligned.out.bam'))
     shell:
         'source activate alignment; '
-        'STAR --runMode alignReads --outSAMtype BAM Unsorted '
+        '(STAR --runMode alignReads --outSAMtype BAM Unsorted '
         '--readFilesCommand zcat --genomeDir {params.genome} '
         '--outFileNamePrefix {params.prefix} '
-        '--readFilesIn {input.r1} {input.r2} {params.extra}'
+        '--readFilesIn {input.r1} {input.r2} {params.extra}) 2> {log}'
 
 
 # Extract mapped reads
@@ -105,8 +109,11 @@ rule filter_unmapped:
     input:
         bam=os.path.join(config['dirs']['output'], 'filter_alignments',
                          '{sample}', '{sample}Aligned.out.bam')
+    log:
+        os.path.join(config['dirs']['log'], 'filter_align', '{sample}.log')
     output:
         bam=os.path.join(config['dirs']['output'], 'alignments',
                               '{sample}Aligned.out.bam')
     shell:
-        'source activate alignment; samtools view -F4 {input.bam} > {output.bam}'
+        'source activate alignment; (samtools view -F4 {input.bam} > '
+        '{output.bam}) 2> {log}'
