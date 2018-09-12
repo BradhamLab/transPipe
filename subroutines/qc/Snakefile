@@ -47,12 +47,6 @@ rule fastp_qc:
         json=os.path.join(config['dirs']['output'], 'qc', '{sample}',
                           'fastp.json')
     shell:
-<<<<<<< HEAD
         'source activate alignment;'
-        'fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
-        '{output.r2} -h {output.html} -j {output.json}'
-=======
-        'source activate qc;'
         '(fastp {params.p1} -i {input.r1} -I {input.r2} -o {output.r1} -O '
         '{output.r2} -h {output.html} -j {output.json}) 2> {log}'
->>>>>>> 88eabe7e57d7179fe704dd9dfc6a1078186e05fd
